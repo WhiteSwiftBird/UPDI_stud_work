@@ -15,7 +15,7 @@ module updi_error_handler #(
     localparam ERROR_START_BIT = 3'b100;
     
     wire       parity_bit      = data_in[DATA_WIDTH - 3];
-    wire       stop_bits       = data_in[11:10];
+    wire [1:0] stop_bits       = data_in[11:10];
     wire       start_bit       = data_in[0];
  
     assign     stop_bit_err    = (stop_bits != 2'b11);
