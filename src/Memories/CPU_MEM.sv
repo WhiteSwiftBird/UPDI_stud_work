@@ -3,13 +3,13 @@
 // Company: POLYTHEC
 // Engineer: ARTEM
 // 
-// Create Date: 22.06.2025 00:17:38
-// Design Name: UPDI REGISTERS
-// Module Name: REG
+// Create Date: 25.06.2025 00:17:38
+// Design Name: UPDI CPU_MEM
+// Module Name: CPU_MEM
 // Project Name: 
-// Target Devices: 
+// Target Devices: UPDI
 // Tool Versions: 
-// Description: REGISTERS OF UPDI TO HANDLE ERRORS, SYSTEM INFO AND ETC
+// Description: CPU Memory for loading packets by CPU, that must be converted into comand frames
 // 
 // Dependencies: 
 // 
@@ -20,14 +20,14 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module REGISTERS(
+module CPU_MEM(
 // Port 0: RW
     clk0,csb0,web0,addr0,din0,dout0
   );
 
   parameter DATA_WIDTH = 8 ;
-  parameter ADDR_WIDTH = 4 ;
-  parameter RAM_DEPTH = 13 ;
+  parameter ADDR_WIDTH = $clog2(128) ;
+  parameter RAM_DEPTH = 128 ;
 
 
   input  clk0; // clock
@@ -37,7 +37,9 @@ module REGISTERS(
   input [DATA_WIDTH-1:0]  din0;
   output [DATA_WIDTH-1:0] dout0;
 
-  reg [DATA_WIDTH-1:0]    mem [0:RAM_DEPTH-1];
+  //вот это по сути и есть память, вот этот вот массив регистров
+  reg [DATA_WIDTH-1:0]  mem [0:RAM_DEPTH-1];
+  
   reg  csb0_reg;
   reg  web0_reg;
   reg [ADDR_WIDTH-1:0]  addr0_reg;
