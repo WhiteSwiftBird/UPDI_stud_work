@@ -20,12 +20,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module CPU_MEM(
+module BUFF_MEM(
 // Port 0: RW
     clk0,csb0,web0,addr0,din0,dout0
   );
 
-  parameter DATA_WIDTH = 8 ;
+  parameter DATA_WIDTH = 12 ;
   parameter ADDR_WIDTH = $clog2(128) ;
   parameter RAM_DEPTH = 128 ;
 
