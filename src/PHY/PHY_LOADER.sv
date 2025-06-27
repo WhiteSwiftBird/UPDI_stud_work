@@ -20,20 +20,19 @@
 
 module PHY_LOADER (
 	
-     input clk,
-	  input rst,   //reset while start UPDI
-     input logic ten,  //transmission enable
-     input logic ren, //receive enable
-	 //input ACK, //acknowledge bit, unnecessary
-    output logic csb0,
-    output logic web0,
-    output logic [6:0]  addr0,
-	  input logic [11:0] i_data,
-	 output logic [11:0] o_data, //не забыть положить сюда данные, в самом топовом модуле соединить соответсвующий выход с память BUFF_MEM
-	  input logic prdata, //RX UART
-	 output logic pwdata,  //TX UART
-	 output logic tend,  //end-transmission signal
-	 output logic rend  //end-receiving signal	 
+     input              clk,     //clock
+	  input              rst,    //reset while start UPDI
+     input logic        ten,   //transmission enable
+     input logic        ren,  //receive enable
+     input logic [11:0] i_data,    //data frrom mem
+     input logic        prdata,   //RX UART
+    output logic        csb0,    //chip select mem
+    output logic        web0,   //write enable mem
+    output logic [6:0]  addr0, //word addr in mem
+	 output logic [11:0] o_data,  //data to mem
+	 output logic        pwdata, //TX UART
+	 output logic        tend,  //end-transmission signal
+	 output logic        rend  //end-receiving signal	 
 	
     );
 	
@@ -94,6 +93,7 @@ module PHY_LOADER (
 		              io_data_reg <= '0;
 						  
 			         end
+						
 			   //transmission
             TR:   begin
 				        if (counter == 0)
@@ -101,7 +101,6 @@ module PHY_LOADER (
 							 
 							   csb0 <= 1'b0;
 							   web0 <= 1'b1;
-						      //io_data_reg [11:0] <= i_data [11:0];
 								
 							 end
 						  
@@ -109,12 +108,11 @@ module PHY_LOADER (
 				          begin
 				
 				            pwdata <= i_data[counter];
-					         //i_data <= (i_data >> 1);
 					         counter <= counter + 1;
 					 
 					       end
 					 
-				        else
+				        if (counter == 11)
 				          begin
 					  
 					         counter <= '0;
@@ -123,7 +121,7 @@ module PHY_LOADER (
 					       end
 					  
 				        //end of transmission
-				        if ( (&addr0) && (counter == 12) )
+				        if ( (&addr0) && (counter == 11) )
 				          begin 
 					  
 					         addr0 <= '0;

@@ -20,23 +20,23 @@
 
 `timescale 10ps / 1ps
 
-module PHY_tb ;
+module PHY_tb_tx ;
 
     logic clk;
     logic rst;
-    logic ten; //transmission enable
+    logic ten; 
     logic ren;
     logic csb0;
     logic web0;
     logic [6:0]  addr0;
     logic [11:0] i_data;
     logic [11:0] o_data;	 
-    logic tend;  //end-transmission signal
-    logic rend;  //end-receiving signal
+    logic tend; 
+    logic rend;  
     logic pwdata; 
     logic prdata; 
 	
-    int iterator, error, cnt, one_delay;
+    int iterator, error, cnt, one_delay; //variables cnt is a immitation of getting data from mem
 	 
 	 logic [13:0] tv [1000:0]; //testvector
 
@@ -60,55 +60,53 @@ module PHY_tb ;
 				
 				
     initial 
-	   begin
+      begin
 		  
-		  $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tv.tv", tv);
+		  //variables init
+		  $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tx.tv", tv);
 		  iterator = 0;
 		  cnt = 0;
-		  { ten, ren, i_data } = tv [0];
 		  error = 0;
 		  one_delay = 0;
+		  
+		  //uut signals init
+		  { ten, ren, i_data } = tv [0];
 		  rst = 0;
 		  clk = 1;
 		  #5;
 		  rst = 1;
 		  
-		  
-		end
+      end
 		
 		
     always 
-	   begin
+      begin
 		  
-		  #5;
-		  clk = ~clk;
+        #5;
+        clk = ~clk;
 		
-		end
+      end
 		
-    always @(negedge clk)
-	   begin
+		
+    always @(posedge clk)
+      begin
 		  
-		  
-		  if (cnt == 0)
-		    begin
+        if (cnt < 12)
+          begin
 			 
-		      //#1;
-            { ten, ren, i_data } = tv [iterator];
+			 //added delay for simulation cnt var, due to faster simulation execution than real module execution
+				if (one_delay > 1)
+		        begin
+				  
+		          cnt += 1;
+					 
+			     end
+				  
+				  
+		      one_delay += 1;
 				
-			 end
-		  
-		  if (one_delay > 2)
-		    begin
-		    cnt += 1;
-			 end
-			 
-		  one_delay += 1;
-		  
-		  if (cnt < 12)
-		    begin
-			 
-			 
-			   if ( pwdata != i_data [cnt])
+				
+			   if ( pwdata != i_data [cnt-1])
 			     begin
 				
 				  $error ("Error detected in %d position, in %d line", cnt, iterator);
@@ -116,17 +114,8 @@ module PHY_tb ;
 				
 				  end
 				
+            end
 			 
-		    end
-			 
-		  if (cnt == 12)
-		    begin
-			 
-		      cnt = 0;
-				iterator += 1;
-				{ ten, ren, i_data } = tv [iterator];
-				
-			 end
 			 
 		  if ( tv [iterator] === 'x )
 		    begin
@@ -138,7 +127,15 @@ module PHY_tb ;
 	     
 	   end
 		
-		
+		always @(negedge clk)
+		    if (cnt == 11)
+		    begin
+			 
+				cnt = -1;
+				iterator += 1;
+				{ ten, ren, i_data } = tv [iterator];
+				
+			 end
 		
 		
 endmodule
