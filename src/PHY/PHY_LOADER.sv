@@ -20,24 +20,25 @@
 
 module PHY_LOADER (
 	
-    input clk,
-	 input rst,   //reset while start UPDI
-    input ten,  //transmission enable
-    input ren, //receive enable
+     input clk,
+	  input rst,   //reset while start UPDI
+     input logic ten,  //transmission enable
+     input logic ren, //receive enable
 	 //input ACK, //acknowledge bit, unnecessary
-    output csb0,
-    output web0,
-    output [6:0]  addr0,
-	 inout [11:0] io_data, //не забыть положить сюда данные, в самом топовом модуле соединить соответсвующий выход с память BUFF_MEM
-	 input prdata, //RX UART
-	 output pwdata,  //TX UART
-	 output tend,  //end-transmission signal
-	 output rend  //end-receiving signal	 
+    output logic csb0,
+    output logic web0,
+    output logic [6:0]  addr0,
+	  input logic [11:0] i_data,
+	 output logic [11:0] o_data, //не забыть положить сюда данные, в самом топовом модуле соединить соответсвующий выход с память BUFF_MEM
+	  input logic prdata, //RX UART
+	 output logic pwdata,  //TX UART
+	 output logic tend,  //end-transmission signal
+	 output logic rend  //end-receiving signal	 
 	
     );
 	
 	logic [11:0] io_data_reg;
-	logic [4:0]  counter;
+	logic [3:0]  counter;
 	
 	enum logic [1:0] {IDLE = 2'b00, TR = 2'b01, RC = 2'b10} state, next_state;
 	
@@ -78,7 +79,7 @@ module PHY_LOADER (
 		
 	  end
 	
-   always_ff @(posedge clk)
+   always_ff @(negedge clk)
       begin
 		  
 		  case (state)
@@ -100,15 +101,15 @@ module PHY_LOADER (
 							 
 							   csb0 <= 1'b0;
 							   web0 <= 1'b1;
-						      io_data_reg <= io_data;
+						      //io_data_reg [11:0] <= i_data [11:0];
 								
 							 end
 						  
 	                 if (counter < 12)
 				          begin
 				
-				            pwdata <= io_data_reg[0];
-					         io_data_reg <= io_data_reg >> 1;
+				            pwdata <= i_data[counter];
+					         //i_data <= (i_data >> 1);
 					         counter <= counter + 1;
 					 
 					       end
@@ -116,13 +117,13 @@ module PHY_LOADER (
 				        else
 				          begin
 					  
-					         counter <= 1'b0;
+					         counter <= '0;
                         addr0 <= addr0 + 1;
 					  
 					       end
 					  
 				        //end of transmission
-				        if ( (&addr0) && (counter == 11) )
+				        if ( (&addr0) && (counter == 12) )
 				          begin 
 					  
 					         addr0 <= '0;
@@ -150,7 +151,7 @@ module PHY_LOADER (
 					         
 								csb0 <= 1'b0;
 								web0 <= 1'b0;
-								io_data <= io_data_reg;
+								o_data <= io_data_reg;
 					         counter <= 1'b0;
                         addr0 <= addr0 + 1;
 					  

@@ -27,13 +27,16 @@ module PHY (
 	output csb0,
 	output web0,
 	output [6:0]  addr0,
-	inout logic [11:0] io_data,
+	input logic [11:0] i_data,
+	output logic [11:0] o_data,
 	output tend,  //end-transmission signal
-	output rend  //end-receiving signal
+	output rend,  //end-receiving signal
+	output pwdata, //убрать
+	output prdata  //убрать
 	
 	);
 	
-	logic pwdata, prdata;
+	//logic pwdata, prdata;
 	
 	PHY_LOADER loader_from_mem ( 
 	
@@ -44,7 +47,8 @@ module PHY (
 										  .csb0(csb0), 
 										  .web0(web0), 
 										  .addr0(addr0), 
-										  .io_data(io_data), 
+										  .i_data(i_data),
+										  .o_data(o_data),  
 										  .pwdata(pwdata), 
 										  .prdata(prdata),
 										  .tend(tend),

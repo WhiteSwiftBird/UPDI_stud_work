@@ -1,0 +1,19 @@
+//////////////////////////////////////////////////////////////////////////////////
+// Company: POLYTHEC
+// Engineer: ARTEM
+// 
+// Create Date: 26.06.2025 00:17:38
+// Design Name: PHY testbench
+// Module Name: PHY_tb
+// Project Name: 
+// Target Devices: UPDI
+// Tool Versions: 
+// Description: testbench of PHY level of UPDI
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
