@@ -91,46 +91,44 @@ module PHY_tb_rx ;
     always @(posedge clk)
       begin
 				
-				o_data_reg[(cnt % 12)] <= prdata;
+        o_data_reg[(cnt % 12)] <= prdata;
 				
-				if (one_delay > 0)
-				cnt <= cnt + 1; 
+        if (one_delay > 0)
+        cnt <= cnt + 1; 
 				
-				one_delay += 1;
+        one_delay += 1;
 			 
 			 
-		  if ( tv [cnt] === 'x )
-		    begin
+        if ( tv [cnt] === 'x )
+          begin
 				
-				  $display ("Test ended in %d iterations and handle %d errors", cnt + 1, error);
-				  $stop;
+              $display ("Test ended in %d iterations and handle %d errors", cnt + 1, error);
+              $stop;
 				  
-			 end
+          end
 	     
-	   end
+        end
 		
     always @(negedge clk)
+      begin
 	 
-	   begin
-	 
-	       { ten, ren, prdata } <= tv [cnt];
+          { ten, ren, prdata } <= tv [cnt];
 			 
-		    if (cnt % 12 == 0)
-		    begin
+          if (cnt % 12 == 0)
+          begin
 			 
-			   if ( o_data != o_data_reg)
+            if ( o_data != o_data_reg)
 			 
-			       begin
+                begin
 				
-				    $error ("Error detected in %d line", iterator);
-				    error += 1;
-				    iterator += 1;
+                $error ("Error detected in %d line", iterator);
+                error += 1;
+                iterator += 1;
 				
-				    end
+                end
 				
-			 end
+          end
 			 
-		end
-		
-		
+      end
+
 endmodule

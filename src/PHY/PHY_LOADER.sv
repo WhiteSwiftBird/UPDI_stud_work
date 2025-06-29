@@ -92,47 +92,47 @@ module PHY_LOADER (
                         rend <= 1'b0;
                         o_data_reg <= '0;
 						  
-			         end
+                   end
 						
 			   //transmission
             TR:   begin
-				        if (counter == 0)
-						    begin
+                    if (counter == 0)
+                      begin
 							 
                         csb0 <= 1'b0;
                         web0 <= 1'b1;
 								
-							 end
+                      end
 						  
-	                 if (counter < 12)
-				          begin
+                    if (counter < 12)
+                      begin
 				
                         pwdata <= i_data[counter];
                         counter <= counter + 1;
 					 
-					       end
+                      end
 					 
-				        if (counter == 11)
-				          begin
+                    if (counter == 11)
+                      begin
 					  
                         counter <= '0;
                         addr0 <= addr0 + 1;
 					  
-					       end
+                      end
 					  
 				        //end of transmission
-				        if ( (&addr0) && (counter == 11) )
-				          begin 
+                    if ( (&addr0) && (counter == 11) )
+                      begin 
 					  
                         addr0 <= '0;
                         tend <= 1'b0;
 					  
-					       end
-				        else
+                      end
+                    else
                         tend <= 1'b1;	
 					
 			
-	               end 
+                 end 
 						
 				//receiving	
             RC:   begin

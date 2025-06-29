@@ -48,8 +48,8 @@ module PHY_tb_tx ;
                .csb0(csb0), 
                .web0(web0), 
                .addr0(addr0), 
-					.i_data(i_data),
-					.o_data(o_data), 
+               .i_data(i_data),
+               .o_data(o_data), 
                .pwdata(pwdata), 
                .prdata(prdata),
                .tend(tend),
@@ -63,18 +63,18 @@ module PHY_tb_tx ;
       begin
 		  
 		  //variables init
-		  $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tx.tv", tv);
-		  iterator = 0;
-		  cnt = 0;
-		  error = 0;
-		  one_delay = 0;
+        $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tx.tv", tv);
+        iterator = 0;
+        cnt = 0;
+        error = 0;
+        one_delay = 0;
 		  
 		  //uut signals init
-		  { ten, ren, i_data } = tv [0];
-		  rst = 0;
-		  clk = 1;
-		  #5;
-		  rst = 1;
+        { ten, ren, i_data } = tv [0];
+        rst = 0;
+        clk = 1;
+        #5;
+        rst = 1;
 		  
       end
 		
@@ -95,47 +95,47 @@ module PHY_tb_tx ;
           begin
 			 
 			 //added delay for simulation cnt var, due to faster simulation execution than real module execution
-				if (one_delay > 1)
-		        begin
+            if (one_delay > 1)
+              begin
 				  
-		          cnt += 1;
+                cnt += 1;
 					 
-			     end
+              end
 				  
 				  
-		      one_delay += 1;
+            one_delay += 1;
 				
 				
-			   if ( pwdata != i_data [cnt-1])
-			     begin
+            if ( pwdata != i_data [cnt-1])
+              begin
 				
-				  $error ("Error detected in %d position, in %d line", cnt, iterator);
-				  error += 1;
+              $error ("Error detected in %d position, in %d line", cnt, iterator);
+              error += 1;
 				
-				  end
+              end
 				
-            end
+           end
 			 
 			 
-		  if ( tv [iterator] === 'x )
-		    begin
+        if ( tv [iterator] === 'x )
+          begin
 				
-				  $display ("Test ended in %d iterations and handle %d errors", iterator + 1, error);
-				  $stop;
+              $display ("Test ended in %d iterations and handle %d errors", iterator + 1, error);
+              $stop;
 				  
-			 end
+          end
 	     
-	   end
+      end
 		
-		always @(negedge clk)
-		    if (cnt == 11)
-		    begin
+      always @(negedge clk)
+          if (cnt == 11)
+          begin
 			 
-				cnt = -1;
-				iterator += 1;
-				{ ten, ren, i_data } = tv [iterator];
+            cnt = -1;
+            iterator += 1;
+            { ten, ren, i_data } = tv [iterator];
 				
-			 end
+          end
 		
 		
 endmodule
