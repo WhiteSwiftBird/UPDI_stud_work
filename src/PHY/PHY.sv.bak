@@ -41,18 +41,18 @@ module PHY (
 	PHY_LOADER loader_from_mem ( 
 	
 	                             .clk(clk),
-	                             .rst(rst), 
+										  .rst(rst), 
 	                             .ten(ten), 
-	                             .ren(ren), 
-	                             .csb0(csb0), 
-	                             .web0(web0), 
-	                             .addr0(addr0), 
-	                             .i_data(i_data),
-	                             .o_data(o_data),  
-	                             .pwdata(pwdata), 
-	                             .prdata(prdata),
-	                             .tend(tend),
-	                             .rend(rend) 
+										  .ren(ren), 
+										  .csb0(csb0), 
+										  .web0(web0), 
+										  .addr0(addr0), 
+										  .i_data(i_data),
+										  .o_data(o_data),  
+										  .pwdata(pwdata), 
+										  .prdata(prdata),
+										  .tend(tend),
+										  .rend(rend) 
 										  
 										);
 	
@@ -61,7 +61,7 @@ module PHY (
 	                             .pwdata(pwdata), 
 	                             .prdata(prdata) 
 										  
-	                             );*/
+										);*/
 										
 endmodule
 										
