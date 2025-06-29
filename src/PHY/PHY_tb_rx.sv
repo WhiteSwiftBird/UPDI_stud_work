@@ -3,12 +3,12 @@
 // Engineer: ARTEM
 // 
 // Create Date: 26.06.2025 00:17:38
-// Design Name: PHY tx testbench 
-// Module Name: PHY_tb_tx
+// Design Name: PHY rx testbench 
+// Module Name: PHY_tb_rx
 // Project Name: 
 // Target Devices: UPDI
 // Tool Versions: 
-// Description: testbench of PHY level transmission of UPDI
+// Description: testbench of PHY level receiving of UPDI
 // 
 // Dependencies: 
 // 
@@ -20,7 +20,7 @@
 
 `timescale 10ps / 1ps
 
-module PHY_tb_tx ;
+module PHY_tb_rx ;
 
     logic clk;
     logic rst;
@@ -38,8 +38,8 @@ module PHY_tb_tx ;
 	
     int iterator, error, cnt, one_delay; //variables cnt is a immitation of getting data from mem
 	 
-	 logic [13:0] tv [1000:0]; //testvector
-
+	 logic [2:0] tv [1000:0]; //testvector
+    logic [11:0] o_data_reg;
     PHY_LOADER uut (
                .clk(clk),
                .rst(rst), 
@@ -63,18 +63,18 @@ module PHY_tb_tx ;
       begin
 		  
 		  //variables init
-		  $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tx.tv", tv);
+		  $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_rx.tv", tv);
 		  iterator = 0;
 		  cnt = 0;
 		  error = 0;
 		  one_delay = 0;
 		  
 		  //uut signals init
-		  { ten, ren, i_data } = tv [0];
-		  rst = 0;
+		  { ten, ren, prdata } = tv [0];
+		  //rst = 0;
 		  clk = 1;
-		  #5;
-		  rst = 1;
+		  //#5;
+		  //rst = 1;
 		  
       end
 		
@@ -90,52 +90,47 @@ module PHY_tb_tx ;
 		
     always @(posedge clk)
       begin
-		  
-        if (cnt < 12)
-          begin
-			 
-			 //added delay for simulation cnt var, due to faster simulation execution than real module execution
-				if (one_delay > 1)
-		        begin
-				  
-		          cnt += 1;
-					 
-			     end
-				  
-				  
-		      one_delay += 1;
 				
+				o_data_reg[(cnt % 12)] <= prdata;
 				
-			   if ( pwdata != i_data [cnt-1])
-			     begin
+				if (one_delay > 0)
+				cnt <= cnt + 1; 
 				
-				  $error ("Error detected in %d position, in %d line", cnt, iterator);
-				  error += 1;
-				
-				  end
-				
-            end
+				one_delay += 1;
 			 
 			 
-		  if ( tv [iterator] === 'x )
+		  if ( tv [cnt] === 'x )
 		    begin
 				
-				  $display ("Test ended in %d iterations and handle %d errors", iterator + 1, error);
+				  $display ("Test ended in %d iterations and handle %d errors", cnt + 1, error);
 				  $stop;
 				  
 			 end
 	     
 	   end
 		
-		always @(negedge clk)
-		    if (cnt == 11)
+    always @(negedge clk)
+	 
+	   begin
+	 
+	       { ten, ren, prdata } <= tv [cnt];
+			 
+		    if (cnt % 12 == 0)
 		    begin
 			 
-				cnt = -1;
-				iterator += 1;
-				{ ten, ren, i_data } = tv [iterator];
+			   if ( o_data != o_data_reg)
+			 
+			       begin
+				
+				    $error ("Error detected in %d line", iterator);
+				    error += 1;
+				    iterator += 1;
+				
+				    end
 				
 			 end
+			 
+		end
 		
 		
 endmodule

@@ -36,7 +36,7 @@ module PHY_LOADER (
 	
     );
 	
-	logic [11:0] io_data_reg;
+	logic [11:0] o_data_reg;
 	logic [3:0]  counter;
 	
 	enum logic [1:0] {IDLE = 2'b00, TR = 2'b01, RC = 2'b10} state, next_state;
@@ -90,7 +90,7 @@ module PHY_LOADER (
 						  addr0 <= '0;
 						  tend <= 1'b0;
 						  rend <= 1'b0;
-		              io_data_reg <= '0;
+		              o_data_reg <= '0;
 						  
 			         end
 						
@@ -136,25 +136,32 @@ module PHY_LOADER (
 						
 				//receiving	
             RC:   begin
+				
+				        if (counter == 0)
+						    begin
+							 
+							   csb0 <= 1'b0;
+							   web0 <= 1'b0;
+								
+							 end
+							 
 				        if (counter < 12)
 						    begin
 							 
-							   io_data_reg [counter] <= prdata;
+							   o_data [counter] <= prdata;
 								counter <= counter + 1;
 								
 							 end
 							 
-				        else
+				        if (counter == 12)
 				          begin
 					         
-								csb0 <= 1'b0;
-								web0 <= 1'b0;
-								o_data <= io_data_reg;
-					         counter <= 1'b0;
-                        addr0 <= addr0 + 1;
+					         counter <= '0;
+								addr0 <= addr0 + 1;
 					  
 					       end
-							 
+						  
+						  //end of receiving 
 				        if ( (&addr0) && (counter == 11) )
 				          begin 
 					  
@@ -175,7 +182,7 @@ module PHY_LOADER (
 						     addr0 = '0;
 						     tend = 1'b0;
 						     rend = 1'b0;
-		                 io_data_reg = '0;
+		                 o_data_reg = '0;
 							  
 			            end
 			endcase
