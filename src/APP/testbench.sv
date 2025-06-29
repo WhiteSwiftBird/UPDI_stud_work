@@ -5,6 +5,7 @@ module tb_top;
     reg clk;
     reg resetn;
     reg start;
+    reg ready;
     wire done;
     wire valid;
     wire repeats_valid;
@@ -18,6 +19,7 @@ module tb_top;
         .start(start),
         .done(done),
         .valid(valid),
+        .ready(ready),
         .repeats_valid(repeats_valid),
         .data_out(data_out),
         .repeats(repeats)
@@ -25,7 +27,7 @@ module tb_top;
     integer i;
     // ???????? ?????????
     always #5 clk = ~clk;
-    
+    always #10 ready = ~ready;
     initial begin
         clk = 1;
         resetn = 0;
@@ -47,6 +49,7 @@ module tb_top;
 
         // ?????? ??????
         start = 1;
+        ready = 1;
         #10;
         start = 0;
 

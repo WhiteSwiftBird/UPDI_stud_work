@@ -3,13 +3,16 @@ module Memory_Reader #(
     parameter ADDR_WIDTH = $clog2(256)
 )(
     input                       clk,
-    input                       resetn,  
+    input                       resetn,
     input                       start,
-    output reg                  done, // reading done
+    output reg                  done,
+
     output reg [DATA_WIDTH-1:0] data_out,
     output reg                  valid,
+    input                       ready,         // <-- новый вход: приёмник готов
+
     output reg                  repeats_valid,
-    output reg [DATA_WIDTH-1:0] repeats, 
+    output reg [DATA_WIDTH-1:0] repeats,
 
     // memory interface
     output reg                  csb0,
@@ -18,22 +21,28 @@ module Memory_Reader #(
     input      [DATA_WIDTH-1:0] dout0
 );
 
-    reg [1:0] state;
-    localparam IDLE = 0, SET_ADDR = 1, READ_COUNT = 2, READ_DATA = 3, DONE = 4;
+    reg [2:0] state;
+    localparam IDLE             = 0,
+               WAIT_READ_COUNT  = 1,
+               READ_COUNT       = 2,
+               WAIT_DATA        = 3,
+               OUTPUT_DATA      = 4,
+               DONE             = 5;
 
-    reg [DATA_WIDTH-1:0] counter;
-    reg [DATA_WIDTH-1:0] total_count;
+    reg [ADDR_WIDTH-1:0] counter;
+    reg [7:0] total_count;
+    reg [7:0] dout_reg;
 
     always @(posedge clk) begin
         if (!resetn) begin
             state <= IDLE;
-            total_count <= '0;
-            counter <= '0;
+            done <= 0;
+            valid <= 0;
             csb0 <= 1;
             web0 <= 1;
             addr0 <= 0;
-            valid <= 0;
-            done <= 0;
+            counter <= 0;
+            total_count <= 0;
             repeats_valid <= 0;
         end else begin
             case (state)
@@ -43,44 +52,55 @@ module Memory_Reader #(
                     repeats_valid <= 0;
                     if (start) begin
                         csb0 <= 0;
-                        web0 <= 1; 
+                        web0 <= 1;
                         addr0 <= 0;
-                        state <= SET_ADDR;
+                        state <= WAIT_READ_COUNT;
                     end
                 end
-                SET_ADDR: begin
-                    counter <= 1;
-                    addr0 <= 1;
+
+                WAIT_READ_COUNT: begin
                     state <= READ_COUNT;
                 end
+
                 READ_COUNT: begin
                     total_count <= dout0;
-                    repeats     <= (dout0 > 4) ? (dout0 - 4) : 0;
+                    repeats <= (dout0 > 4) ? (dout0 - 4) : 0;
                     repeats_valid <= 1;
-                    addr0 <= counter + 1;
-                    counter <= counter + 1;
-                    state <= READ_DATA;
+                    counter <= 1;
+                    addr0 <= 1;
+                    state <= WAIT_DATA;
                 end
 
-                READ_DATA: begin
-                    if (counter <= total_count + 1) begin
-                        data_out <= dout0;
+                WAIT_DATA: begin
+                    state <= OUTPUT_DATA;
+                end
+
+                OUTPUT_DATA: begin
+                    valid <= 0;
+                    if (ready) begin
                         valid <= 1;
-                        repeats_valid <= 0;
-                        addr0 <= counter + 1;
+                        data_out <= dout0;
                         counter <= counter + 1;
-                    end else begin
-                        valid <= 0;
-			            repeats_valid <= 0;
-                        done <= 1;
-                        state <= DONE;
+                        addr0 <= counter + 1;
+                        if (counter == total_count) begin
+                            repeats_valid <= 0;
+                            done <= 1;
+                            state <= DONE;
+                        end else begin
+                            state <= WAIT_DATA;
+                        end
                     end
                 end
 
                 DONE: begin
-                    if (!start) state <= IDLE;
+                    if (!start) begin
+                        state <= IDLE;
+                    end
                 end
             endcase
         end
     end
+
+
+
 endmodule
