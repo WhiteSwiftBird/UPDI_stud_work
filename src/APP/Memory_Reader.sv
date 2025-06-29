@@ -9,7 +9,7 @@ module Memory_Reader #(
 
     output reg [DATA_WIDTH-1:0] data_out,
     output reg                  valid,
-    input                       ready,         // <-- новый вход: приёмник готов
+    input                       ready, 
 
     output reg                  repeats_valid,
     output reg [DATA_WIDTH-1:0] repeats,
