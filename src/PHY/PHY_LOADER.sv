@@ -36,7 +36,7 @@ module PHY_LOADER (
 	
     );
 	
-    logic [11:0] o_data_reg;
+    //logic [11:0] o_data_reg;
     logic [3:0]  counter;
 	
     enum logic [1:0] {IDLE = 2'b00, TR = 2'b01, RC = 2'b10} state, next_state;
@@ -90,7 +90,7 @@ module PHY_LOADER (
                         addr0 <= '0;
                         tend <= 1'b0;
                         rend <= 1'b0;
-                        o_data_reg <= '0;
+                        //o_data_reg <= '0;
 						  
                    end
 						
@@ -182,7 +182,7 @@ module PHY_LOADER (
                         addr0 = '0;
                         tend = 1'b0;
                         rend = 1'b0;
-                        o_data_reg = '0;
+                        //o_data_reg = '0;
 							  
                      end
           endcase

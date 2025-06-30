@@ -2,7 +2,7 @@
 // Company: POLYTHEC
 // Engineer: ARTEM
 // 
-// Create Date: 25.06.2025 00:17:38
+// Create Date: 26.06.2025 00:17:38
 // Design Name: UPDI Physical level
 // Module Name: PHY
 // Project Name: 
@@ -20,25 +20,25 @@
 
 module PHY (
 
-	input clk,
-	input rst,
-	input ten, //transmission enable
-	input ren,
-	output csb0,
-	output web0,
-	output [6:0]  addr0,
-	input logic [11:0] i_data,
-	output logic [11:0] o_data,
-	output tend,  //end-transmission signal
-	output rend,  //end-receiving signal
-	output pwdata, //убрать
-	output prdata  //убрать
+   input clk,
+   input rst,
+   input ten, //transmission enable
+   input ren,
+   input logic [11:0] i_data,
+   output csb0,
+   output web0,
+   output [6:0]  addr0,
+   output logic [11:0] o_data,
+   output tend,  //end-transmission signal
+   output rend  //end-receiving signal
+   //output pwdata, //убрать и включать только для тестбенчей
+   //output prdata  //убрать и включать только для тестбенчей
 	
-	);
+   );
 	
-	//logic pwdata, prdata;
+   //logic pwdata, prdata;
 	
-	PHY_LOADER loader_from_mem ( 
+   PHY_LOADER loader_from_mem ( 
 	
 	                             .clk(clk),
 	                             .rst(rst), 
@@ -56,7 +56,7 @@ module PHY (
 										  
 										);
 	
-	/*apb_uart UART              ( 
+   /*apb_uart UART              ( 
 	
 	                             .pwdata(pwdata), 
 	                             .prdata(prdata) 

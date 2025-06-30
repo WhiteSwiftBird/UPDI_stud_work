@@ -3,13 +3,13 @@
 // Company: POLYTHEC
 // Engineer: ARTEM
 // 
-// Create Date: 24.06.2025 00:17:38
-// Design Name: UPDI BUFF_MEM
-// Module Name: BUFF_MEM
+// Create Date: 25.06.2025 00:17:38
+// Design Name: UPDI CPU_MEM
+// Module Name: CPU_MEM
 // Project Name: 
 // Target Devices: UPDI
 // Tool Versions: 
-// Description: BUFF Memory for connection of PHY and CG
+// Description: CPU Memory for loading packets by CPU, that must be converted into comand frames
 // 
 // Dependencies: 
 // 
@@ -20,12 +20,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module BUFF_MEM(
+module CPU_MEM(
 // Port 0: RW
     clk0,csb0,web0,addr0,din0,dout0
   );
 
-  parameter DATA_WIDTH = 12 ;
+  parameter DATA_WIDTH = 8 ;
   parameter ADDR_WIDTH = $clog2(128) ;
   parameter RAM_DEPTH = 128 ;
 
