@@ -124,5 +124,23 @@ end
 assign parity = ^data_q;
 assign o_data = {1'h0, data, parity, 2'h3};
 
+always_ff @( posedge i_clk ) begin
+    if (~i_rstn)
+    begin
+        state <= SYNCH;
+        data_q <= '0;
+        frame_counter_q <= '0;
+        ready_q <= '0;
+        valid_q <= '0;
+    end
+    else
+    begin
+        state <= new_state;
+        data_next <= data_q;
+        frame_counter_q <= frame_counter_next;
+        ready_q <= ready_next;
+        valid_q <= valid_next;
+    end
+end
 
 endmodule
