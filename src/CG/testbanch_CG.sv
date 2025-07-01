@@ -2,7 +2,6 @@ module testbench;
 
 logic [7:0]  repeat_number;
 localparam seed = 12345;
-$urandom(seed);
 logic clk, rstn;
 
 logic i_write, i_valid;
@@ -11,7 +10,7 @@ logic o_write, o_trans_en, o_ready, o_valid;
 logic [7:0]  sent_data, i_data;
 logic [11:0] o_data;
 
-CG_FSM CG_FSM(
+CG_FSM DUT(
   .i_clk(clk),
   .i_rstn(rstn),
 
@@ -31,18 +30,22 @@ CG_FSM CG_FSM(
   initial
   begin
     clk = '0;
-
     forever
-      # 500 clk = ~ clk;
+    begin
+      #50;
+       clk = ~ clk;
+    end
   end
 
 // resetn generator
   initial
   begin
     rstn <= 'x;
-    repeat (2) @ (posedge clk);
+    repeat (2) 
+    @ (posedge clk);
     rstn <= '0;
-    repeat (2) @ (posedge clk);
+    repeat (2) 
+    @ (posedge clk);
     rstn <= '1;
   end
 
@@ -63,7 +66,7 @@ CG_FSM CG_FSM(
 
 
 //APP part (generation of input signals)
-task APP_generation()
+task APP_generation();
   wait (o_write)
   i_valid <= 1;
   i_data  <= repeat_number;
@@ -73,7 +76,7 @@ task APP_generation()
   begin
     @ (posedge clk)
     i_valid <= 1;
-    i_data  <= $urandom;
+    i_data  <= $random;
     sent_data <= i_data;
     wait (o_ready);
     end
@@ -83,7 +86,7 @@ endtask
 
 initial 
 begin
-    $urandom(seed);
+    $random(seed);
     wait (~rstn)
     i_valid <= 0;
     
@@ -95,7 +98,7 @@ begin
 end
 
 //Checking of start, parity and stop bits
-task check_frame()
+task check_frame();
   if (o_data [0] != 0)
   begin
     $display("Start bit error!");
@@ -114,7 +117,7 @@ task check_frame()
 endtask
 
 //SYNCH character
-task SYNCH_check()
+task SYNCH_check();
   wait (o_valid);
   if (o_data != 12'b010101010011)
   begin
@@ -128,7 +131,7 @@ task SYNCH_check()
 endtask
 
 //REPEAT character
-task REPEAT_check()
+task REPEAT_check(input logic [7:0] repeat_number);
   if (repeat_number != 0)
   begin
     wait (o_valid)
@@ -144,7 +147,6 @@ task REPEAT_check()
     end
 
     wait (o_valid);
-    check_frame_ev <= ~check_frame_ev;
     if (o_data [8:1] != repeat_number)
     begin
       $display ("REPEAT number character error. Was expected: %d get: %d", repeat_number, o_data[8:1]);
@@ -158,7 +160,7 @@ task REPEAT_check()
 endtask
 
 //INSTRUCTION
-task INSTRUCTION_check()
+task INSTRUCTION_check();
   wait (o_valid);
   check_frame();
   if (o_data [8:1] != 8'b01100110)
@@ -169,20 +171,20 @@ task INSTRUCTION_check()
 endtask
 
 //DATA check
-task DATA_check()
+task DATA_check();
   wait (o_valid);
   check_frame();
   if (o_data [8:1] != sent_data)
   begin
-    $display ("DATA error. Sent: %b_%b get: %b_%b", sended_data[7:4], sended_data[3:0], o_data[8:5], o_data[4:1]);
+    $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
     $finish;
   end
 endtask
 
 
-task check_module()
+task check_module(input logic [7:0] repeat_number);
   SYNCH_check();
-  REPEAT_check();
+  REPEAT_check(repeat_number);
   INSTRUCTION_check();
   for (int i = repeat_number * 4; i > 0; i--)
   begin
@@ -199,11 +201,11 @@ endtask
 initial 
 begin
   wait (~rstn);
-  check_module();
+  check_module(repeat_number);
 
   wait(repeat_number == 0);
-  check_module();
-
+  check_module(repeat_number);
+  $display("PASS");
   $finish;
 end
 
@@ -211,7 +213,7 @@ end
 initial
 begin
     repeat (100000) @ (posedge clk);
-    $display ("FAIL %s: timeout!", test_id);
+    $display ("FAIL: timeout!");
     $finish;
 end
 

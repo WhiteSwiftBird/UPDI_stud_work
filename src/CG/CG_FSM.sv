@@ -12,7 +12,7 @@ module CG_FSM(
   output [11:0] o_data,
   output        o_valid,
   output        o_write
-)
+);
 
 
 logic       parity;
@@ -21,6 +21,8 @@ logic [9:0] frame_counter_q, frame_counter_next;
 logic [7:0] repeat_number_q, repeat_number_next;
 logic       valid_next, valid_q;
 logic       ready_next, ready_q;
+logic       trans_en_next, trans_en_q;
+
 
 enum logic [2:0] {
     SYNCH         = 3'b000,
@@ -33,10 +35,7 @@ state, new_state;
 
 always_comb
 begin
-    o_ready    = 0;
-    o_trans_en = 0;
-    o_valid    = 0;
-
+    trans_en_next      = trans_en_q;
     frame_counter_next = frame_counter_q;
     new_state          = state;
     repeat_number_next = repeat_number_q;
@@ -50,7 +49,7 @@ begin
     begin
         data_next = 0;
         repeat_number_next = 0;
-        o_ready = 1;
+        ready_next = 1;
         valid_next = 0;
 
         if(i_valid) 
@@ -77,7 +76,7 @@ begin
         data_next = 8'b10100000;
         new_state = RPT_0;
         valid_next = 1;
-        o_ready = 0;
+        ready_next = 0;
     end
 
 
@@ -85,7 +84,7 @@ begin
     begin
         data_next  = repeat_number_q;
         valid_next = 1;
-        o_ready    = 0;
+        ready_next = 0;
 
         new_state = INSTRUCTION;
     end
@@ -95,7 +94,7 @@ begin
     begin
         data_next  = 8'b00100100;
         valid_next = 1;
-        o_ready    = 1;
+        ready_next = 1;
 
         new_state = DATA;
     end
@@ -103,19 +102,22 @@ begin
 
     DATA:
     begin
-        o_ready    = 1;
-        valid_next = 1;
-        data_next  = i_data;
+        if(i_valid) 
+        begin
+            ready_next = 1;
+            valid_next = 1;
+            data_next  = i_data;
 
-        if(frame_counter_q == 1)
-        begin
-            new_state = SYNCH;
-            o_trans_en = 1;
-        end
-        else
-        begin
-            new_state = DATA;
-            frame_counter_next = frame_counter_q - 1;
+            if(frame_counter_q == 1)
+            begin
+                new_state     = SYNCH;
+                trans_en_next = 1;
+            end
+            else
+            begin
+                new_state = DATA;
+                frame_counter_next = frame_counter_q - 1;
+            end
         end
     end
     endcase
@@ -123,8 +125,11 @@ end
 
 
 assign parity = ^data_q;
-assign o_data = {1'h0, data, parity, 2'h3};
-assign o_write = i_write;
+assign o_data = {1'h0, data_q, parity, 2'h3};
+assign o_write    = i_write;
+assign o_ready    = ready_q;
+assign o_trans_en = trans_en_q;
+assign o_valid    = valid_q;
 
 always_ff @( posedge i_clk ) begin
     if (~i_rstn)
@@ -134,14 +139,16 @@ always_ff @( posedge i_clk ) begin
         frame_counter_q <= '0;
         ready_q <= '0;
         valid_q <= '0;
+        trans_en_q <= '0;
     end
     else
     begin
         state <= new_state;
-        data_next <= data_q;
+        data_q <= data_next;
         frame_counter_q <= frame_counter_next;
         ready_q <= ready_next;
         valid_q <= valid_next;
+        trans_en_q <= trans_en_next;
     end
 end
 
