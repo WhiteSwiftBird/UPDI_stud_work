@@ -1,16 +1,31 @@
 module testbench;
 
-logic [7:0] repeat_number;
+logic [7:0]  repeat_number;
 localparam seed = 12345;
 $urandom(seed);
 logic clk, rstn;
 
-logic i_write;
+logic i_write, i_valid;
 
-logic o_write, o_trans_en;
-logic [7:0] sent_data;
+logic o_write, o_trans_en, o_ready, o_valid;
+logic [7:0]  sent_data, i_data;
+logic [11:0] o_data;
 
+CG_FSM CG_FSM(
+  .i_clk(clk),
+  .i_rstn(rstn),
 
+  .i_data(i_data),
+  .i_valid(i_valid),
+
+  .o_ready(o_ready),
+  .i_write(i_write),
+  
+  .o_trans_en(o_trans_en),
+  .o_data(o_data),
+  .o_valid(o_valid),
+  .o_write(o_write)
+);
 
 //clock generation
   initial
@@ -188,6 +203,8 @@ begin
 
   wait(repeat_number == 0);
   check_module();
+
+  $finish;
 end
 
 // Setting timeout against hangs
