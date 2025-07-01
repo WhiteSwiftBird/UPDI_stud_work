@@ -1,6 +1,6 @@
 module CG_FSM(
   input         i_clk,
-                i_rst,
+                i_rstn,
 
   input  [7:0]  i_data,
                 i_valid,
@@ -10,7 +10,8 @@ module CG_FSM(
   
   output        o_trans_en,
   output [11:0] o_data,
-  output        o_valid
+  output        o_valid,
+  output        o_write
 )
 
 
@@ -123,6 +124,7 @@ end
 
 assign parity = ^data_q;
 assign o_data = {1'h0, data, parity, 2'h3};
+assign o_write = i_write;
 
 always_ff @( posedge i_clk ) begin
     if (~i_rstn)
