@@ -2,11 +2,10 @@ module top_APP (
     input wire        i_clk,
     input wire        i_resetn,
     input wire        i_ready,
+    input wire        i_write,
     output wire       o_done,
     output wire       o_valid,
-    output wire       o_repeats_valid,
-    output wire [7:0] o_data,
-    output wire [7:0] o_repeats
+    output wire [7:0] o_data
 );
 
     wire [7:0]   addr_mem;
@@ -29,9 +28,8 @@ module top_APP (
         .o_done(o_done),
         .o_data(o_data),
         .o_valid(o_valid),
-        .i_i_ready(i_ready),
-        .o_repeats(o_repeats),
-        .o_o_repeats_valid(o_repeats_valid),
+        .i_ready(i_ready),
+        .i_write(i_write),
         .csb0(csb_mem),
         .web0(web_mem),
         .addr0(addr_mem),

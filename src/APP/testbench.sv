@@ -5,11 +5,11 @@ module tb_top;
     reg i_clk;
     reg i_resetn;
     reg i_ready;
+    reg i_write;
     wire o_done;
     wire o_valid;
-    wire o_repeats_valid;
     wire [7:0] o_data;
-    wire [7:0] o_repeats;
+
 
     // ??????????? top-??????
     top_APP dut (
@@ -18,9 +18,8 @@ module tb_top;
         .o_done(o_done),
         .o_valid(o_valid),
         .i_ready(i_ready),
-        .o_repeats_valid(o_repeats_valid),
-        .o_data(o_data),
-        .o_repeats(o_repeats)
+	.i_write(i_write),
+        .o_data(o_data)
     );
     integer i;
     // ???????? ?????????
@@ -29,6 +28,7 @@ module tb_top;
     initial begin
         i_clk = 1;
         i_resetn = 0;
+	
 
         // ?????
         #20;
@@ -45,9 +45,10 @@ module tb_top;
         #20;
 
         // ?????? ??????
-
+	i_write = 1;
         i_ready = 1;
         #10;
+	i_write = 0;
 
 
         
@@ -56,12 +57,6 @@ module tb_top;
         
     end
 
-    // ?????????? ?????
-    always @(posedge i_clk) begin
-        if (o_repeats_valid)
-            $display("Time %t: o_repeats = %0d", $time, o_repeats);
-        if (o_valid)
-            $display("Time %t: DATA OUT = %0d", $time, o_data);
-    end
+
 
 endmodule
