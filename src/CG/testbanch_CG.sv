@@ -74,7 +74,7 @@ mailbox#(packet) mbx2 = new();
  end
 
 
-//APP part (generation of input signals)
+//APP part (generation of input signals) pattern
 task APP_generation();
   wait (o_write);
   i_valid <= 1;
@@ -94,6 +94,7 @@ task APP_generation();
   i_valid <= 0;
 endtask
 
+//inputs generation
 initial begin
   $urandom(seed);
   wait(~rstn)
@@ -123,7 +124,7 @@ task check_frame(logic [11:0] data);
   end
 endtask
 
-
+//checks frames SYNCH, REPEAT, INSTRUCTION
 task check_all_frames();
   mbx2.get(pckt_get_2);
   //SYNCH character
@@ -140,7 +141,7 @@ task check_all_frames();
 //REPEAT character
  if (repeat_number != 0)
   begin
-    check_frame(pckt_get_2.REPEAT_instr_frame);
+    check_frame(pckt_get_2.REPEAT_instr_frame); //Checking of start, parity and stop bits
     if (pckt_get_2.REPEAT_instr_frame [8:1] != 8'b10100000)
     begin
       $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
@@ -151,7 +152,7 @@ task check_all_frames();
       $display("REPEAT instruction was CORRECT");
     end
 
-    check_frame(pckt_get_2.REPEAT_num_frame);
+    check_frame(pckt_get_2.REPEAT_num_frame); //Checking of start, parity and stop bits
     if (pckt_get_2.REPEAT_num_frame [8:1] != repeat_number)
     begin
       $display ("REPEAT number character error. Was expected: %d get: %d", repeat_number, o_data[8:1]);
@@ -164,7 +165,7 @@ task check_all_frames();
   end
 
 //INSTRUCTION
-  check_frame(pckt_get_2.INSTR_frame);
+  check_frame(pckt_get_2.INSTR_frame); //Checking of start, parity and stop bits
   if (pckt_get_2.INSTR_frame [8:1] != 8'b01100110)
   begin
     $display ("ST INSTRUCTION error. Was expected: 0110_0110 get: %b_%b", o_data[8:5], o_data[4:1]);
@@ -178,7 +179,7 @@ initial
 begin
   wait (~rstn);
 
-  mbx1.get(pckt_get_1);
+  mbx1.get(pckt_get_1); //gets repeat number
 
   wait(o_valid);
   pckt_get_1.SYNCH_char_frame <= o_data;
@@ -192,7 +193,7 @@ begin
   wait(o_valid);
   pckt_get_1.INSTR_frame <= o_data;
 
-  mbx2.put(pckt_get_1);
+  mbx2.put(pckt_get_1); //puts frames for cheking frames
 
   //DATA check
   for (int i = repeat_number * 4 + 1; i > 0; i--)
@@ -212,10 +213,10 @@ begin
   check_all_frames();
 
 
+  //next repeat
+  mbx1.get(pckt_get_1);//gets repeat number
 
-  mbx1.get(pckt_get_1);
-
-  wait(o_valid);
+  wait(o_valid); //wait for frames
   pckt_get_1.SYNCH_char_frame <= o_data;
   if(pckt_get_1.repeat_num_frame > 0)
   begin
@@ -227,10 +228,9 @@ begin
   wait(o_valid);
   pckt_get_1.INSTR_frame <= o_data;
 
-  mbx2.put(pckt_get_1);
 
-
-//DATA check
+  mbx2.put(pckt_get_1);//puts frames for cheking frames
+  //DATA check
   for (int i = repeat_number * 4 + 1; i > 0; i--)
   begin
     wait (o_valid);
@@ -246,7 +246,7 @@ begin
     end
   end
 
-  check_all_frames();
+  check_all_frames(); //checks frames
 end
 
 // Setting timeout against hangs
