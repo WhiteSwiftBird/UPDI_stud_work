@@ -2,40 +2,37 @@
 
 module tb_top;
 
-    reg clk;
-    reg resetn;
-    reg start;
-    reg ready;
-    wire done;
-    wire valid;
-    wire repeats_valid;
-    wire [7:0] data_out;
-    wire [7:0] repeats;
+    reg i_clk;
+    reg i_resetn;
+    reg i_ready;
+    wire o_done;
+    wire o_valid;
+    wire o_repeats_valid;
+    wire [7:0] o_data;
+    wire [7:0] o_repeats;
 
     // ??????????? top-??????
-    top dut (
-        .clk(clk),
-        .resetn(resetn),
-        .start(start),
-        .done(done),
-        .valid(valid),
-        .ready(ready),
-        .repeats_valid(repeats_valid),
-        .data_out(data_out),
-        .repeats(repeats)
+    top_APP dut (
+        .i_clk(i_clk),
+        .i_resetn(i_resetn),
+        .o_done(o_done),
+        .o_valid(o_valid),
+        .i_ready(i_ready),
+        .o_repeats_valid(o_repeats_valid),
+        .o_data(o_data),
+        .o_repeats(o_repeats)
     );
     integer i;
     // ???????? ?????????
-    always #5 clk = ~clk;
-    always #10 ready = ~ready;
+    always #5 i_clk = ~i_clk;
+    always #10 i_ready = ~i_ready;
     initial begin
-        clk = 1;
-        resetn = 0;
-        start = 0;
+        i_clk = 1;
+        i_resetn = 0;
 
         // ?????
         #20;
-        resetn = 1;
+        i_resetn = 1;
 
     
 	
@@ -48,23 +45,23 @@ module tb_top;
         #20;
 
         // ?????? ??????
-        start = 1;
-        ready = 1;
+
+        i_ready = 1;
         #10;
-        start = 0;
+
 
         
-        wait (done);
+        wait (o_done);
         #20;
         
     end
 
     // ?????????? ?????
-    always @(posedge clk) begin
-        if (repeats_valid)
-            $display("Time %t: REPEATS = %0d", $time, repeats);
-        if (valid)
-            $display("Time %t: DATA OUT = %0d", $time, data_out);
+    always @(posedge i_clk) begin
+        if (o_repeats_valid)
+            $display("Time %t: o_repeats = %0d", $time, o_repeats);
+        if (o_valid)
+            $display("Time %t: DATA OUT = %0d", $time, o_data);
     end
 
 endmodule
