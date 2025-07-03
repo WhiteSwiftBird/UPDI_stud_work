@@ -30,9 +30,9 @@ module PHY (
    output [6:0]  addr0,
    output logic [11:0] o_data,
    output tend,  //end-transmission signal
-   output rend  //end-receiving signal
-   //output pwdata, //убрать и включать только для тестбенчей
-   //output prdata  //убрать и включать только для тестбенчей
+   output rend,  //end-receiving signal
+   output pwdata, //убрать и включать только для тестбенчей
+   output prdata  //убрать и включать только для тестбенчей
 	
    );
 	

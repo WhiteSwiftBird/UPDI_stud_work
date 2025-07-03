@@ -177,11 +177,11 @@ module PHY_LOADER (
 				
             default: begin
 				
-                        csb0 = 1'b1;
-                        counter = '0;
-                        addr0 = '0;
-                        tend = 1'b0;
-                        rend = 1'b0;
+                        csb0 <= 1'b1;
+                        counter <= '0;
+                        addr0 <= '0;
+                        tend <= 1'b0;
+                        rend <= 1'b0;
                         //o_data_reg = '0;
 							  
                      end
