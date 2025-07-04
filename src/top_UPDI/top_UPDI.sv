@@ -29,34 +29,53 @@ module top_UPDI (
 );
 
                   
-	//APP + CG
-   wire       ready_from_CG;
-   wire       valid_to_CG;
-   wire [7:0] data_to_CG;
+	//APP + CG + CPU_MEM connetction
+   wire            ready_from_CG;
+   wire            valid_to_CG;
+   wire [7:0]      data_to_CG;
+
+   wire [7:0]      addr_mem;
+   wire [7:0]      dout_mem;
+   wire            csb_mem; 
+   wire            web_mem;
+
 
 	//PHY (without apb_uart connection) + BUFF_MEM connection
-   wire           csb0;                   // active low chip select
-   wire           web0;                   // active low write control
-   wire    [6:0]  addr0;                  // adress in mem
-   wire    [11:0] din0;                   // input data mem
-   wire    [11:0] dout0;                  // ouptup data mem
-	 wire           rst;                    // PHY reset signal
-	 wire           ten;                    // transmission enable
-	 wire           ren;                    // receiving enable
-	 wire           tend;                   // end-transmission signal
-	 wire           rend;                   // end-receiving signal
-	
+   wire            csb0;                   // active low chip select
+   wire            web0;                   // active low write control
+   wire    [6:0]   addr0;                  // adress in mem
+   wire    [11:0]  din0;                   // input data mem
+   wire    [11:0]  dout0;                  // ouptup data mem
+	wire            rst;                    // PHY reset signal
+	wire            ten;                    // transmission enable
+	wire            ren;                    // receiving enable
+	wire            tend;                   // end-transmission signal
+	wire            rend;                   // end-receiving signal
 
-	
-   top_APP top_APP_inst(
-      .i_clk(clk),
-      .i_resetn(i_resetn),
-      .i_ready(ready_from_CG),
-      .i_write(i_write),
-      .o_done(),
-      .o_valid(valid_to_CG),
-      .o_data(data_to_CG)
-   );
+
+   // Connection between CPU memory and CG
+    CPU_MEM mem_inst (
+        .clk0(clk),
+        .csb0(csb_mem),
+        .web0(web_mem),
+        .addr0(addr_mem),
+        .din0(8'b0),  
+        .dout0(dout_mem)
+    );
+
+    Memory_Reader reader_inst (
+        .i_clk(clk),
+        .i_resetn(i_resetn),
+        .o_done(),
+        .o_data(data_to_CG),
+        .o_valid(valid_to_CG),
+        .i_ready(ready_from_CG),
+        .i_write(i_write),
+        .csb0(csb_mem),
+        .web0(web_mem),
+        .addr0(addr_mem),
+        .dout0(dout_mem)
+    );
 
    CG_FSM CG_FSM_inst(
       .i_clk(clk),
