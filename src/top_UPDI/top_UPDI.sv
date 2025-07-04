@@ -34,6 +34,20 @@ module top_UPDI (
    wire       valid_to_CG;
    wire [7:0] data_to_CG;
 
+	//PHY (without apb_uart connection) + BUFF_MEM connection
+   wire           csb0;                   // active low chip select
+   wire           web0;                   // active low write control
+   wire    [6:0]  addr0;                  // adress in mem
+   wire    [11:0] din0;                   // input data mem
+   wire    [11:0] dout0;                  // ouptup data mem
+	 wire           rst;                    // PHY reset signal
+	 wire           ten;                    // transmission enable
+	 wire           ren;                    // receiving enable
+	 wire           tend;                   // end-transmission signal
+	 wire           rend;                   // end-receiving signal
+	
+
+	
    top_APP top_APP_inst(
       .i_clk(clk),
       .i_resetn(i_resetn),
@@ -56,24 +70,10 @@ module top_UPDI (
       .o_valid(),
       .o_write()
    );
-
-	//PHY (without apb_uart connection) + BUFF_MEM connection
-   wire           csb0;                   // active low chip select
-   wire           web0;                   // active low write control
-   wire    [6:0]  addr0;                  // adress in mem
-   wire    [11:0] din0;                   // input data mem
-   wire    [11:0] dout0;                  // ouptup data mem
-	wire           rst;                    // PHY reset signal
-	wire           ten;                    // transmission enable
-	wire           ren;                    // receiving enable
-	wire           tend;                   // end-transmission signal
-	wire           rend;                   // end-receiving signal
-	
-
-	
+  
 	//Physical layer responsible for transmission and receiving data to/from external source
    PHY
-   physical_layer
+   physical_layer_inst
    (
       
       //inputs
@@ -95,7 +95,7 @@ module top_UPDI (
 	
    //UPDI internal buffer memory
    BUFF_MEM 
-   buffer_memory 
+   buffer_memory_inst 
    (
       
       //inputs

@@ -3,12 +3,12 @@
 // Engineer: ARTEM
 // 
 // Create Date: 26.06.2025 00:17:38
-// Design Name: PHY tx testbench 2ed
-// Module Name: PHY_tb_tx
+// Design Name: PHY rx testbench 
+// Module Name: PHY_tb_rx
 // Project Name: 
 // Target Devices: UPDI
 // Tool Versions: 
-// Description: testbench of PHY level transmission of UPDI
+// Description: testbench of PHY level receiving of UPDI
 // 
 // Dependencies: 
 // 
@@ -20,7 +20,7 @@
 
 `timescale 10ps / 1ps
 
-module PHY_TX_tb ;
+module PHY_RX_tb ;
 
     logic        clk;
     logic        rst;
@@ -36,18 +36,18 @@ module PHY_TX_tb ;
     logic        pwdata; 
     logic        prdata; 
 	
-    int iterator, error, cnt;             //variables cnt is a immitation of getting data from mem
-	 
-    logic [13:0] tv [1000:0];             //testvector
-	 
+    int error, cnt;             //variables cnt is a immitation of getting data from mem
+	  logic [2:0] tv [1000:0];    //testvector
+    //logic [11:0] o_data_reg;
+    
     typedef struct {
-        
-        logic idt;
-         
-    } pack;                                //structures mailboxed in inital blocks to carry prev iteration
+    
+        logic prdt;
+    
+    } pack;
     
     mailbox#(pack) monitor = new();
-
+    
     PHY_LOADER uut (
                .clk(clk),
                .rst(rst), 
@@ -56,8 +56,8 @@ module PHY_TX_tb ;
                .csb0(csb0), 
                .web0(web0), 
                .addr0(addr0), 
-               .i_data(i_data),
-               .o_data(o_data), 
+					     .i_data(i_data),
+					     .o_data(o_data), 
                .pwdata(pwdata), 
                .prdata(prdata),
                .tend(tend),
@@ -67,18 +67,19 @@ module PHY_TX_tb ;
 				
     always begin
         #5; clk = ~clk;	
-      end		
+      end	
+				
 				
     initial begin
+		  
 		  //variables init
         pack pkt;
-        $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_tx.tv", tv);
-        iterator = 0;
-        cnt = 0;
-        error = 0;
+		    $readmemb("D:/UPDI Project RADAR/UPDI_stud_work/src/PHY/PHY_tb_rx.tv", tv);
+		    cnt = 0;
+		    error = 0;
 		  
 		  //uut signals init
-        { ten , ren , i_data } = tv [0];
+		    { ten, ren, prdata } = tv [0];
         clk = 1;
         rst = 0;
         #10;
@@ -86,44 +87,41 @@ module PHY_TX_tb ;
         
         forever begin
           @(negedge clk)
-                      
-          pkt.idt = i_data[cnt];
+          
+          pkt.prdt = prdata;
           monitor.put(pkt);
           
-          if (cnt == 11) begin
-            iterator += 1;
-            cnt = 0;
-            { ten , ren , i_data } <= tv [iterator];
-            if ( tv [iterator] === 'x ) begin
-              $display ("Test ended in %d iterations and handle %d errors", iterator + 1, error);
+          { ten, ren, prdata } = tv [cnt];
+        
+          if ( tv [cnt] === 'x ) begin
+              $display ("Test ended in %d iterations and handle %d errors", cnt, error);
               $stop;
               end
-            continue;
-            end
-            
+          
           cnt++;
           
           end
-          
-        end  
-
-    initial begin
-      
+		  
+      end
+		
+		initial begin
+    
         pack pkt_prev, pkt_cur;
       
         wait (rst);
         monitor.get(pkt_prev);
         forever begin
-        
+    
           monitor.get(pkt_cur);
-          if ( pwdata != pkt_prev.idt ) begin
-              $error ("error detected in %d position, in %d testvector line", cnt, iterator );
+          if ( pkt_prev.prdt != o_data[(cnt-2) % 12] ) begin
+              $error ("error detected in %d vector", cnt );
               error += 1;
               end
           
-          pkt_prev.idt = pkt_cur.idt;
+          pkt_prev.prdt = pkt_cur.prdt;
           end
-          
+
         end
-		
+
+        
 endmodule

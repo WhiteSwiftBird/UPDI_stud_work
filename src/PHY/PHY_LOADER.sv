@@ -142,7 +142,8 @@ module PHY_LOADER (
 							 
                         csb0 <= 1'b0;
                         web0 <= 1'b0;
-								
+                        addr0 <= addr0 + 1;
+                        
                       end
 							 
                     if (counter < 12)
@@ -153,11 +154,10 @@ module PHY_LOADER (
 								
                       end
 							 
-                    if (counter == 12)
+                    if (counter == 11)
                       begin
 					         
                         counter <= '0;
-                        addr0 <= addr0 + 1;
 					  
                       end
 						  
