@@ -3,7 +3,7 @@ module CG_FSM(
                 i_rstn,
 
   input  [7:0]  i_data,
-                i_valid,
+  input         i_valid,
 
   output        o_ready,
   input         i_write,
@@ -55,7 +55,7 @@ begin
         if(i_valid) 
         begin
             data_next = 8'h55;
-            valid_next = 1;
+            valid_next = 0;
 
             if(i_data == 0)
             begin
@@ -125,7 +125,7 @@ end
 
 
 assign parity = ^data_q;
-assign o_data = {1'h0, data_q, parity, 2'h3};
+assign o_data = {1'b0, data_q, parity, 2'b11};
 assign o_write    = i_write;
 assign o_ready    = ready_q;
 assign o_trans_en = trans_en_q;

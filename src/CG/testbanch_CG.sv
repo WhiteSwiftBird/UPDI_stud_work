@@ -26,18 +26,12 @@ CG_FSM DUT(
   .o_write(o_write)
 );
 
-typedef struct{
-  bit [7 :0] repeat_num_frame;
-  bit [11:0] SYNCH_char_frame;
-  bit [11:0] REPEAT_instr_frame;
-  bit [11:0] REPEAT_num_frame;
-  bit [11:0] INSTR_frame;
-} packet;
+ logic [7 :0] repeat_num;
+ logic [11:0] SYNCH_char_frame;
+ logic [11:0] REPEAT_instr_frame;
+ logic [11:0] REPEAT_num_frame;
+ logic [11:0] INSTR_frame;
 
-packet pckt_put, pckt_get_1, pckt_get_2;
-
-mailbox#(packet) mbx1 = new();
-mailbox#(packet) mbx2 = new();
 
 //clock generation
   initial
@@ -74,16 +68,14 @@ mailbox#(packet) mbx2 = new();
  end
 
 
-//APP part (generation of input signals) pattern
-task APP_generation();
+//APP part (generation of input signals)
+task APP_generation(logic [7:0] repeat_number_1);
   wait (o_write);
   i_valid <= 1;
-  i_data  <= repeat_number;
-  pckt_put.repeat_num_frame <= repeat_number;
-  mbx1.put(pckt_put);
+  i_data  <= repeat_number_1;
   wait (o_ready);
 
-  for (int i = 1; i < (repeat_number * 4) + 1; i++)
+  for (int i = 1; i < (repeat_number_1 * 4) + 1; i++)
   begin
     @ (posedge clk)
     i_valid <= 1;
@@ -94,22 +86,21 @@ task APP_generation();
   i_valid <= 0;
 endtask
 
-//inputs generation
 initial begin
   $urandom(seed);
   wait(~rstn)
   i_valid <= 0;
-  repeat_number = 10;
-  APP_generation();
-  repeat_number = 0;
-  APP_generation();
+  repeat_number = 8'd10;
+  APP_generation(repeat_number);
+  repeat_number = 8'd0;
+  APP_generation(repeat_number);
 end
 
 //Checking of start, parity and stop bits
 task check_frame(logic [11:0] data);
   if (data [0] != 0)
   begin
-    $display("Start bit error!");
+    $display("Start bit error! Start bit: %b", data[0]);
     $finish;
   end
   if (data [11:10] != 2'b11)
@@ -124,11 +115,34 @@ task check_frame(logic [11:0] data);
   end
 endtask
 
-//checks frames SYNCH, REPEAT, INSTRUCTION
-task check_all_frames();
-  mbx2.get(pckt_get_2);
+
+
+//test of outputs to PHY mem part
+initial 
+begin
+  wait (~rstn);
+
+  repeat_num <= 8'd10;
+
+  wait(o_valid);
+  $display("repeat_number: %d", repeat_num);
+  SYNCH_char_frame <= o_data;
+  $display("SYNCH char was writen");
+  if(repeat_num > 0)
+  begin
+    wait(o_valid);
+    REPEAT_instr_frame <= o_data;
+    $display("REPEAT char was writen");
+    wait(o_valid);
+    REPEAT_num_frame <= o_data;
+  end
+  wait(o_valid);
+  INSTR_frame <= o_data;
+  $display("INSTR char was writen");
+
+
   //SYNCH character
-  if (pckt_get_2.SYNCH_char_frame != 12'b010101010011)
+  if (SYNCH_char_frame != 12'b010101010011)
   begin
     $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
     $finish;
@@ -139,10 +153,11 @@ task check_all_frames();
   end
 
 //REPEAT character
- if (repeat_number != 0)
+  $display("REPEAT frame check");
+  if (repeat_num != 0)
   begin
-    check_frame(pckt_get_2.REPEAT_instr_frame); //Checking of start, parity and stop bits
-    if (pckt_get_2.REPEAT_instr_frame [8:1] != 8'b10100000)
+    check_frame(REPEAT_instr_frame);
+    if (REPEAT_instr_frame [8:1] != 8'b10100000)
     begin
       $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
       $finish;
@@ -152,10 +167,10 @@ task check_all_frames();
       $display("REPEAT instruction was CORRECT");
     end
 
-    check_frame(pckt_get_2.REPEAT_num_frame); //Checking of start, parity and stop bits
-    if (pckt_get_2.REPEAT_num_frame [8:1] != repeat_number)
+    check_frame(REPEAT_num_frame);
+    if (REPEAT_num_frame [8:1] != repeat_num)
     begin
-      $display ("REPEAT number character error. Was expected: %d get: %d", repeat_number, o_data[8:1]);
+      $display ("REPEAT number character error. Was expected: %d get: %d", repeat_num, o_data[8:1]);
       $finish;
     end
     else
@@ -165,38 +180,20 @@ task check_all_frames();
   end
 
 //INSTRUCTION
-  check_frame(pckt_get_2.INSTR_frame); //Checking of start, parity and stop bits
-  if (pckt_get_2.INSTR_frame [8:1] != 8'b01100110)
+  $display("INSTR frame check");
+  check_frame(INSTR_frame);
+  if (INSTR_frame [8:1] != 8'b01100110)
   begin
     $display ("ST INSTRUCTION error. Was expected: 0110_0110 get: %b_%b", o_data[8:5], o_data[4:1]);
     $finish;
   end
-endtask
-
-
-//test of outputs to PHY mem part
-initial 
-begin
-  wait (~rstn);
-
-  mbx1.get(pckt_get_1); //gets repeat number
-
-  wait(o_valid);
-  pckt_get_1.SYNCH_char_frame <= o_data;
-  if(pckt_get_1.repeat_num_frame > 0)
+  else
   begin
-    wait(o_valid);
-    pckt_get_1.REPEAT_instr_frame <= o_data;
-    wait(o_valid);
-    pckt_get_1.REPEAT_num_frame <= o_data;
+    $display("INSTRUCTION character was CORRECT");
   end
-  wait(o_valid);
-  pckt_get_1.INSTR_frame <= o_data;
-
-  mbx2.put(pckt_get_1); //puts frames for cheking frames
 
   //DATA check
-  for (int i = repeat_number * 4 + 1; i > 0; i--)
+  for (int i = repeat_num * 4 + 1; i > 0; i--)
   begin
     wait (o_valid);
     check_frame(o_data);
@@ -205,33 +202,85 @@ begin
       $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
       $finish;
     end
+    else
+    begin
+      $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
+    end
     if (o_trans_en == 1)
     begin
-      $display("Mismatch counter: expected: %d Real: %d", repeat_number * 4, repeat_number * 4 - i);
+      $display("Mismatch counter: expected: %d Real: %d", repeat_num * 4, repeat_num * 4 - i);
     end
   end
-  check_all_frames();
 
 
-  //next repeat
-  mbx1.get(pckt_get_1);//gets repeat number
 
-  wait(o_valid); //wait for frames
-  pckt_get_1.SYNCH_char_frame <= o_data;
-  if(pckt_get_1.repeat_num_frame > 0)
+
+  repeat_num <= 8'd0;
+
+  wait(o_valid);
+  $display("repeat_number: %d", repeat_num);
+  SYNCH_char_frame <= o_data;
+  if(repeat_num > 0)
   begin
     wait(o_valid);
-    pckt_get_1.REPEAT_instr_frame <= o_data;
+    REPEAT_instr_frame <= o_data;
     wait(o_valid);
-    pckt_get_1.REPEAT_num_frame <= o_data;
+    REPEAT_num_frame <= o_data;
   end
   wait(o_valid);
-  pckt_get_1.INSTR_frame <= o_data;
+  INSTR_frame <= o_data;
 
 
-  mbx2.put(pckt_get_1);//puts frames for cheking frames
-  //DATA check
-  for (int i = repeat_number * 4 + 1; i > 0; i--)
+  //SYNCH character
+  if (SYNCH_char_frame != 12'b010101010011)
+  begin
+    $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
+    $finish;
+  end
+  else
+  begin
+    $display("SYNCH character was CORRECT");
+  end
+
+ //REPEAT character
+  $display("REPEAT frame check");
+  if (repeat_num != 0)
+  begin
+    check_frame(REPEAT_instr_frame);
+    if (REPEAT_instr_frame [8:1] != 8'b10100000)
+    begin
+      $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
+      $finish;
+    end
+    else
+    begin
+      $display("REPEAT instruction was CORRECT");
+    end
+
+    check_frame(REPEAT_num_frame);
+    if (REPEAT_num_frame [8:1] != repeat_num)
+    begin
+      $display ("REPEAT number character error. Was expected: %d get: %d", repeat_num, o_data[8:1]);
+      $finish;
+    end
+    else
+    begin
+      $display("REPEAT number was CORRECT");
+    end
+  end
+
+ //INSTRUCTION
+  $display("INSTR frame check");
+  check_frame(INSTR_frame);
+  if (INSTR_frame [8:1] != 8'b01100110)
+  begin
+    $display ("ST INSTRUCTION error. Was expected: 0110_0110 get: %b_%b", o_data[8:5], o_data[4:1]);
+    $finish;
+  end
+
+  
+ //DATA check
+  for (int i = repeat_num * 4 + 1; i > 0; i--)
   begin
     wait (o_valid);
     check_frame(o_data);
@@ -240,13 +289,15 @@ begin
       $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
       $finish;
     end
+    else
+    begin
+      $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
+    end
     if (o_trans_en == 1)
     begin
-      $display("Mismatch counter: expected: %d Real: %d", repeat_number * 4, repeat_number * 4 - i);
+      $display("Mismatch counter: expected: %d Real: %d", repeat_num * 4, repeat_num * 4 - i);
     end
   end
-
-  check_all_frames(); //checks frames
 end
 
 // Setting timeout against hangs
