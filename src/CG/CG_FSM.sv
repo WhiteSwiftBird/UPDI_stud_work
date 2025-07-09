@@ -28,8 +28,9 @@ enum logic [2:0] {
     SYNCH         = 3'b000,
     REPEAT        = 3'b001,
     RPT_0         = 3'b010,
-    INSTRUCTION   = 3'b011,
-    DATA          = 3'b100
+    SYNCH_REP     = 3'b011,
+    INSTRUCTION   = 3'b100,
+    DATA          = 3'b101
 }
 state, new_state;
 
@@ -89,10 +90,18 @@ begin
         new_state = INSTRUCTION;
     end
 
+    SYNCH_REP:
+    begin
+        data_next = 8'h55;
+        new_state = RPT_0;
+        valid_next = 1;
+        ready_next = 0;
+    end
+
 
     INSTRUCTION:
     begin
-        data_next  = 8'b00100100;
+        data_next  = 8'b01100100;
         valid_next = 1;
         ready_next = 1;
 

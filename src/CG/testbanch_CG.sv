@@ -10,6 +10,7 @@ logic o_write, o_trans_en, o_ready, o_valid;
 logic [7:0]  sent_data, i_data;
 logic [11:0] o_data;
 
+
 CG_FSM DUT(
   .i_clk(clk),
   .i_rstn(rstn),
@@ -29,7 +30,7 @@ CG_FSM DUT(
  logic [7 :0] repeat_num;
  logic [11:0] SYNCH_char_frame;
  logic [11:0] REPEAT_instr_frame;
- logic [11:0] REPEAT_num_frame;
+ logic [11:0] REPEAT_num_frame, SYNCH_REP_frame;
  logic [11:0] INSTR_frame;
 
 
@@ -135,6 +136,8 @@ begin
     $display("REPEAT char was writen");
     wait(o_valid);
     REPEAT_num_frame <= o_data;
+    wait(o_valid);
+    SYNCH_REP_frame <= o_data;
   end
   wait(o_valid);
   INSTR_frame <= o_data;
@@ -142,7 +145,7 @@ begin
 
 
   //SYNCH character
-  if (SYNCH_char_frame != 12'b010101010011)
+  if (SYNCH_char_frame != 12'b0_01010101_011)
   begin
     $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
     $finish;
@@ -176,6 +179,18 @@ begin
     else
     begin
       $display("REPEAT number was CORRECT");
+    end
+
+      //SYNCH character
+    check_frame(SYNCH_REP_frame);
+    if (SYNCH_REP_frame != 8'b01010101)
+    begin
+      $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
+      $finish;
+    end
+    else
+    begin
+      $display("SYNCH character was CORRECT");
     end
   end
 
