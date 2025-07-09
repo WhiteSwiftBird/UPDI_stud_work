@@ -93,7 +93,7 @@ begin
     SYNCH_REP:
     begin
         data_next = 8'h55;
-        new_state = RPT_0;
+        new_state = INSTRUCTION;
         valid_next = 1;
         ready_next = 0;
     end
