@@ -7,7 +7,7 @@ logic clk, rstn;
 logic i_write, i_valid;
 
 logic o_write, o_trans_en, o_ready, o_valid;
-logic [7:0]  sent_data, i_data;
+logic [7:0]  sent_data_next, i_data, sent_data_q;
 logic [11:0] o_data;
 
 
@@ -28,10 +28,7 @@ CG_FSM DUT(
 );
 
  logic [7 :0] repeat_num;
- logic [11:0] SYNCH_char_frame;
- logic [11:0] REPEAT_instr_frame;
- logic [11:0] REPEAT_num_frame, SYNCH_REP_frame;
- logic [11:0] INSTR_frame;
+
 
 
 //clock generation
@@ -62,10 +59,6 @@ CG_FSM DUT(
     i_write <= '1;
     @ (posedge clk);
     i_write <= '0;
-    // wait (o_trans_en);
-    // i_write <= '1;
-    // @ (posedge clk);
-    // i_write <= '0;
  end
 
 
@@ -78,12 +71,22 @@ task APP_generation(logic [7:0] repeat_number_1);
 
   for (int i = 1; i < (repeat_number_1 * 4) + 1; i++)
   begin
+    sent_data_next = i_data;
     @ (posedge clk)
     i_valid <= 1;
     i_data  <= $urandom;
-    sent_data = i_data;
-    wait (o_ready);
+    sent_data_q = sent_data_next;
+
+    if (!o_ready)
+    begin
+    // $display("Valid wait");
+      while(!o_ready)
+      begin
+      @ (posedge clk);
+      end
     end
+    end
+    
   i_valid <= 0;
 endtask
 
@@ -95,25 +98,23 @@ initial begin
   APP_generation(repeat_number);
   wait(o_trans_en);
   $finish;
-  // repeat_number = 8'd0;
-  // APP_generation(repeat_number);
 end
 
 //Checking of start, parity and stop bits
 task check_frame(logic [11:0] data);
-  if (data [0] != 0)
+  if (data [11] != 0)
   begin
     $display("Start bit error! Start bit: %b", data[0]);
     $finish;
   end
-  if (data [11:10] != 2'b11)
+  if (data [1:0] != 2'b11)
   begin
-    $display("Stop bit error!");
+    $display("Stop bit error! Get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
     $finish;
   end
-  if (^data[8:1] != data[9])
+  if (^data[10:3] != data[2])
   begin
-    $display("Parity bit error!");
+    $display("Parity bit error! Get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
     $finish;
   end
 endtask
@@ -124,30 +125,22 @@ endtask
 initial 
 begin
   wait (~rstn);
-
+  @ (posedge rstn);
   repeat_num <= 8'd10;
 
-  wait(o_valid);
-  $display("repeat_number: %d", repeat_num);
-  SYNCH_char_frame <= o_data;
-  $display("SYNCH char was writen");
-  if(repeat_num > 0)
+// -------------SYNCH character----------------------------------------------------------------------
+  if (!o_valid)
   begin
-    wait(o_valid);
-    REPEAT_instr_frame <= o_data;
-    $display("REPEAT char was writen");
-    wait(o_valid);
-    REPEAT_num_frame <= o_data;
-    wait(o_valid);
-    SYNCH_REP_frame <= o_data;
+  $display("Valid wait");
+  while(!o_valid)
+  begin
+  @ (posedge clk);
   end
-  wait(o_valid);
-  INSTR_frame <= o_data;
-  $display("INSTR char was writen");
+  end
 
-
-  //SYNCH character
-  if (SYNCH_char_frame != 12'b0_01010101_011)
+  $display("repeat_number: %d", repeat_num);
+  $display("SYNCH char: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
+  if (o_data != 12'b0_01010101_011)
   begin
     $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
     $finish;
@@ -156,50 +149,89 @@ begin
   begin
     $display("SYNCH character was CORRECT");
   end
+  
 
-//REPEAT character
-  $display("REPEAT frame check");
-  if (repeat_num != 0)
+// ------------REPEAT character-----------------------------------------------------------------
+  @ (posedge clk);
+  if (!o_valid)
   begin
-    check_frame(REPEAT_instr_frame);
-    if (REPEAT_instr_frame [8:1] != 8'b10100000)
+  $display("Valid wait");
+  while(!o_valid)
+  begin
+  @ (posedge clk);
+  end
+  end
+
+  //---------Instr----------------------
+  if(repeat_num > 0)
+  begin
+    
+    $display("REPEAT frame check");
+    check_frame(o_data);
+    if (o_data [10:3] != 8'b10100000)
     begin
-      $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
-      $finish;
+        $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
+        $finish;
     end
     else
     begin
-      $display("REPEAT instruction was CORRECT");
+       $display("REPEAT instruction was CORRECT");
+    end
+    //-----Number----------------------
+    @ (posedge clk);
+    if (!o_valid)
+    begin
+      while(!o_valid)
+      begin
+      @ (posedge clk);
+      end
     end
 
-    check_frame(REPEAT_num_frame);
-    if (REPEAT_num_frame [8:1] != repeat_num)
+    check_frame(o_data);
+    if (o_data [10:3] != repeat_num)
     begin
-      $display ("REPEAT number character error. Was expected: %d get: %d", repeat_num, o_data[8:1]);
-      $finish;
+        $display ("REPEAT number character error. Was expected: %d get: %d", repeat_num, o_data[8:1]);
+        $finish;
     end
     else
     begin
-      $display("REPEAT number was CORRECT");
+        $display("REPEAT number was CORRECT");
     end
-
-      //SYNCH character
-    check_frame(SYNCH_REP_frame);
-    if (SYNCH_REP_frame != 8'b01010101)
+    //----SYNCH character-------------
+    @ (posedge clk);
+    if (!o_valid)
     begin
-      $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
-      $finish;
+      while(!o_valid)
+      begin
+      @ (posedge clk);
+      end
+    end
+    
+    check_frame(o_data);
+    if (o_data[10:3] != 8'b01010101)
+    begin
+        $display ("SYNCH character error. Was expected: 0010_1010_1011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
+        $finish;
     end
     else
     begin
-      $display("SYNCH character was CORRECT");
+        $display("SYNCH character was CORRECT");
     end
   end
 
-//INSTRUCTION
+//---------------INSTRUCTION------------------------------------------------------------------------------------------
+  @ (posedge clk);
+  if (!o_valid)
+  begin
+  while(!o_valid)
+  begin
+  @ (posedge clk);
+  end
+  end
+  
   $display("INSTR frame check");
-  check_frame(INSTR_frame);
-  if (INSTR_frame [8:1] != 8'b01100110)
+  check_frame(o_data);
+  if (o_data [10:3] != 8'b01100100)
   begin
     $display ("ST INSTRUCTION error. Was expected: 0110_0110 get: %b_%b", o_data[8:5], o_data[4:1]);
     $finish;
@@ -209,115 +241,38 @@ begin
     $display("INSTRUCTION character was CORRECT");
   end
 
-  //DATA check
+//---------------DATA check------------------------------------------------------------------------------------------
   for (int i = repeat_num * 4 + 1; i > 0; i--)
   begin
-    wait (o_valid);
-    check_frame(o_data);
-    if (o_data [8:1] != sent_data)
+    @ (posedge clk);
+    if (!o_valid)
     begin
-      $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
+      while(!o_valid)
+      begin
+      @ (posedge clk);
+      end
+    end
+
+    check_frame(o_data);
+    if (o_data [10:3] != sent_data_q)
+    begin
+      $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data_q[7:4], sent_data_q[3:0], o_data[10:7], o_data[6:3]);
       $finish;
     end
     else
     begin
-      $display ("DATA correct. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
+      $display ("DATA correct. Sent: %b_%b get: %b_%b", sent_data_q[7:4], sent_data_q[3:0], o_data[10:7], o_data[6:3]);
     end
     if (o_trans_en == 1)
     begin
       $display("Mismatch counter: expected: %d Real: %d", repeat_num * 4, repeat_num * 4 - i);
     end
   end
-
-
-
-
-//   repeat_num <= 8'd0;
-
-//   wait(o_valid);
-//   $display("repeat_number: %d", repeat_num);
-//   SYNCH_char_frame <= o_data;
-//   if(repeat_num > 0)
-//   begin
-//     wait(o_valid);
-//     REPEAT_instr_frame <= o_data;
-//     wait(o_valid);
-//     REPEAT_num_frame <= o_data;
-//   end
-//   wait(o_valid);
-//   INSTR_frame <= o_data;
-
-
-//   //SYNCH character
-//   if (SYNCH_char_frame != 12'b010101010011)
-//   begin
-//     $display ("SYNCH character error. Was expected: 0101_0101_0011 get: %b_%b_%b", o_data[11:8], o_data[7:4], o_data[3:0]);
-//     $finish;
-//   end
-//   else
-//   begin
-//     $display("SYNCH character was CORRECT");
-//   end
-
-//  //REPEAT character
-//   $display("REPEAT frame check");
-//   if (repeat_num != 0)
-//   begin
-//     check_frame(REPEAT_instr_frame);
-//     if (REPEAT_instr_frame [8:1] != 8'b10100000)
-//     begin
-//       $display ("REPEAT instruction character error. Was expected: 1010_0000 get: %b_%b", o_data[8:5], o_data[4:1]);
-//       $finish;
-//     end
-//     else
-//     begin
-//       $display("REPEAT instruction was CORRECT");
-//     end
-
-//     check_frame(REPEAT_num_frame);
-//     if (REPEAT_num_frame [8:1] != repeat_num)
-//     begin
-//       $display ("REPEAT number character error. Was expected: %d get: %d", repeat_num, o_data[8:1]);
-//       $finish;
-//     end
-//     else
-//     begin
-//       $display("REPEAT number was CORRECT");
-//     end
-//   end
-
-//  //INSTRUCTION
-//   $display("INSTR frame check");
-//   check_frame(INSTR_frame);
-//   if (INSTR_frame [8:1] != 8'b01100110)
-//   begin
-//     $display ("ST INSTRUCTION error. Was expected: 0110_0110 get: %b_%b", o_data[8:5], o_data[4:1]);
-//     $finish;
-//   end
-
-  
-//  //DATA check
-//   for (int i = repeat_num * 4 + 1; i > 0; i--)
-//   begin
-//     wait (o_valid);
-//     check_frame(o_data);
-//     if (o_data [8:1] != sent_data)
-//     begin
-//       $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
-//       $finish;
-//     end
-//     else
-//     begin
-//       $display ("DATA error. Sent: %b_%b get: %b_%b", sent_data[7:4], sent_data[3:0], o_data[8:5], o_data[4:1]);
-//     end
-//     if (o_trans_en == 1)
-//     begin
-//       $display("Mismatch counter: expected: %d Real: %d", repeat_num * 4, repeat_num * 4 - i);
-//     end
-//   end
 end
+//---------------END of OUTPUT check----------------------------------------------------------------------------------
 
-// Setting timeout against hangs
+
+//---------------Setting timeout against hangs------------------------------------------------------------------------
 initial
 begin
     repeat (100000) @ (posedge clk);

@@ -52,11 +52,12 @@ begin
         repeat_number_next = 0;
         ready_next = 1;
         valid_next = 0;
+        frame_counter_next = 4;
 
         if(i_valid) 
         begin
             data_next = 8'h55;
-            valid_next = 0;
+            valid_next = 1;
 
             if(i_data == 0)
             begin
@@ -86,8 +87,9 @@ begin
         data_next  = repeat_number_q;
         valid_next = 1;
         ready_next = 0;
+        frame_counter_next = repeat_number_q * 4;
 
-        new_state = INSTRUCTION;
+        new_state = SYNCH_REP;
     end
 
     SYNCH_REP:
@@ -149,6 +151,7 @@ always_ff @( posedge i_clk ) begin
         ready_q <= '0;
         valid_q <= '0;
         trans_en_q <= '0;
+        repeat_number_q <= '0;
     end
     else
     begin
@@ -158,6 +161,7 @@ always_ff @( posedge i_clk ) begin
         ready_q <= ready_next;
         valid_q <= valid_next;
         trans_en_q <= trans_en_next;
+        repeat_number_q <= repeat_number_next;
     end
 end
 
